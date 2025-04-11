@@ -1,4 +1,4 @@
-#使用方法：(主要)
+# How to Use :
 #三角洲输入：
 如果游戏.placeId==6516141723那么---大厅
 loadstring(游戏：HttpGet("https://raw.githubusercontent.com/MrFuZebing/Doors/main/Main"))()
