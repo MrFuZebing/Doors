@@ -140,7 +140,7 @@ local Options = getgenv().Linoria.Options
 local Toggles = getgenv().Linoria.Toggles
 
 local Window = Library:CreateWindow({
-	Title = "MS V2 汉化作者：小玄奘 提供者：ghgj 服务器：DOORS",
+	Title = "MS V2 汉化作者：MrFuZebing 提供者：ghgj 服务器：DOORS",
 	Center = true,
 	AutoShow = true,
 	Resizable = true,
