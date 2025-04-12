@@ -1,7 +1,7 @@
 --[[
-加入不和谐(dsc.gg/sension)以获得更新和支持
+Join discord (dsc.gg/sensation) for updates and support
 
-当运行此脚本时，您自动同意我们的服务条款，在我们的不一致声明。
+When running this script you automatically agree to our Terms of Service, stated in our discord.
 ]]
 
 loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/730854e5b6499ee91deb1080e8e12ae3.lua"))()
