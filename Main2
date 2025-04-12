@@ -1,2 +1,7 @@
 getgenv().MSHUB_PLUS = true
 loadstring(game:HttpGet(("https://raw.githubusercontent.com/msstudio45/MSDOORS/main/MSHUB_Loader.lua"),true))()
+--[[
+注释
+key how to get:visit
+keyrblx.com/getkey/MSHUB
+--]]
