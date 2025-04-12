@@ -9,10 +9,8 @@ local bin = creds:section("玩家信息",true)
     bin:Label("你的注入器:"..identifyexecutor())
     
     local bin = creds:section("作者信息",true)
-    bin:Label("官群817708872:")
-    bin:Label("作者:bin")
-    bin:Label("该脚本15元进群免费")
-    bin:Label("倒卖思慕")
+    bin:Label("作者:MrFuZebing")
+    bin:Label("Roblox:MrFu170")
     bin:Label("随机几次更新")
     
 local credits = creds:section("关闭",true)
