@@ -1,2 +1,0 @@
-getgenv().MSHUB_PLUS = true
-loadstring(game:HttpGet(("https://raw.githubusercontent.com/msstudio45/MSDOORS/main/MSHUB_Loader.lua"),true))() ––– MSHub
