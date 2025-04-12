@@ -1,5 +1,5 @@
 if game.PlaceId == 6516141723 then  --- Lobby Blackking
-loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkDoorsKing/DoorsCode/refs/heads/main/lobby"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MrFuZebing/DoorsCode/refs/heads/main/lobby"))()
 elseif game.PlaceId == 6839171747 then --- In Game Blackking
-loadstring(game:HttpGet("https://raw.githubusercontent.com/DarkDoorsKing/DoorsCode/main/main"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MrFuZebing/DoorsCode/refs/heads/main/main"))()
 end
