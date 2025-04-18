@@ -7,7 +7,7 @@ if game.Players.LocalPlayer.Name == "AQ14ABS" or game.Players.LocalPlayer.Name =
 else
 
 OrionLib:MakeNotification({
-      Name = "情云脚本中心",
+      Name = "MrFu脚本中心",
       Content = "脚本启动中",
       Time = 2.5 })
 
@@ -17,7 +17,7 @@ local Sound = Instance.new("Sound")
       Sound.Volume = 5
       Sound:Play()
 
-local Window = OrionLib:MakeWindow({Name = "情云脚本中心", HidePremium = false, SaveConfig = false, IntroText = "情云脚本中心", ConfigFolder = "情云脚本中心"})
+local Window = OrionLib:MakeWindow({Name = "MrFu脚本中心", HidePremium = false, SaveConfig = false, IntroText = "情云脚本中心", ConfigFolder = "情云脚本中心"})
 
 local Tab = Window:MakeTab({
       Name = "公告",
@@ -25,7 +25,7 @@ local Tab = Window:MakeTab({
       PremiumOnly = false
 })
 
-Tab:AddParagraph("作者","情云")
+Tab:AddParagraph("作者","MrFuZebing")
 Tab:AddLabel("此脚本为缝合")
 Tab:AddLabel("此脚本完全免费禁止倒卖")
 Tab:AddLabel("QQ群 : 834856433")
@@ -2467,7 +2467,7 @@ local Tab = Window:MakeTab({
 })
 
 local Section = Tab:AddSection({
-      Name = "情云与DX共同制作"
+      Name = "MrFu制作"
 })
 
 Tab:AddButton({
