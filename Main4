@@ -2443,6 +2443,12 @@ loadstring(game:HttpGet("https://github.com/MrFuZebing/Scripts/raw/refs/heads/ma
 end})
 
 Tab:AddButton({
+    Name = "十字架"
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MrFuZebing/Scripts/refs/heads/main/Crucifix"))()
+end})
+
+Tab:AddButton({
     Name = "神圣手雷",
     Callback = function()
 loadstring(game:HttpGet("https://pastebin.com/raw/u5B1UjGv"))()
