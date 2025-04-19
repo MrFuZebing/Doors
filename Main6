@@ -30,9 +30,9 @@ local Window = Rayfield:CreateWindow({
 
 	Name = "Doors Summon Entity's",
 
-	LoadingTitle = "Welcome To Hello666bob Doors Summon Gui.",
+	LoadingTitle = "Welcome To MrFu Doors Summon Gui.",
 
-	LoadingSubtitle = "by Hello666bob",
+	LoadingSubtitle = "by MrFu170",
 
 	ConfigurationSaving = {
 
@@ -308,7 +308,6 @@ local Button = Tab:CreateButton({
 
                 eyes.Attachment.Angry.Enabled = true
 
-                local CameraShaker = require(game.ReplicatedStorage.CameraShaker)
 
         local CameraShaker = require(game.ReplicatedStorage.CameraShaker)
 
