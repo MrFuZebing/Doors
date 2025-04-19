@@ -17,7 +17,7 @@ local Sound = Instance.new("Sound")
       Sound.Volume = 5
       Sound:Play()
 
-local Window = OrionLib:MakeWindow({Name = "MrFu脚本中心", HidePremium = false, SaveConfig = false, IntroText = "情云脚本中心", ConfigFolder = "情云脚本中心"})
+local Window = OrionLib:MakeWindow({Name = "MrFu脚本中心", HidePremium = false, SaveConfig = false, IntroText = "MrFu脚本中心", ConfigFolder = "MrFu脚本中心"})
 
 local Tab = Window:MakeTab({
       Name = "公告",
