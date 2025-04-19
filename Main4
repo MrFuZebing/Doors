@@ -2446,7 +2446,8 @@ Tab:AddButton({
     Name = "十字架"
     Callback = function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/MrFuZebing/Scripts/refs/heads/main/Crucifix"))()
-end})
+    end
+})
 
 Tab:AddButton({
     Name = "神圣手雷",
