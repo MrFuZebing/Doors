@@ -1,4 +1,4 @@
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 
 Rayfield:Notify({
 
@@ -393,7 +393,7 @@ local Button = Tab:CreateButton({
 
 	Callback = function()
 
-		loadstring(game:HttpGet"https://raw.githubusercontent.com/sponguss/storage/main/entitySpawner.lua")().createEntity("Ambush")
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/sponguss/storage/main/entitySpawner.lua"))().createEntity("Ambush")
 
 local tb=entityTable["Ambush"]
 
@@ -407,7 +407,7 @@ tb.Ambush.Enabled=true
 
 tb.WaitTime=2.5
 
-loadstring(game:HttpGet"https://raw.githubusercontent.com/sponguss/storage/main/entitySpawner.lua")().runEntity("Ambush")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sponguss/storage/main/entitySpawner.lua"))().runEntity("Ambush")
 
 	end,
 
@@ -437,7 +437,7 @@ local Button = Tab:CreateButton({
 
 	Callback = function()
 
-			loadstring(game:HttpGet('https://github.com/Noonie1/RandomUtilities/blob/ShadowScript/ShadowMain.lua?raw=true'))()
+			loadstring(game:HttpGet("https://github.com/Noonie1/RandomUtilities/blob/ShadowScript/ShadowMain.lua?raw=true"))()
 
 	end,
 
@@ -663,7 +663,7 @@ local Button = Tab:CreateButton({
 
 	Callback = function()
 
-		  loadstring(game:HttpGet('https://raw.githubusercontent.com/StupidProAArsenal/main/main/deer%20customs',true))()
+		  loadstring(game:HttpGet("https://raw.githubusercontent.com/StupidProAArsenal/main/main/deer%20customs",true))()
 
 	end,
 
@@ -675,7 +675,7 @@ local Button = Misc:CreateButton({
 
 	Callback = function()
 
-		  loadstring(game:HttpGet('https://raw.githubusercontent.com/plamen6789/DoorsEntitySummonerGUI/main/EntityGUI'))()
+		  loadstring(game:HttpGet("https://raw.githubusercontent.com/plamen6789/DoorsEntitySummonerGUI/main/EntityGUI"))()
 
 	end,
 
