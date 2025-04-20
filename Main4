@@ -2205,7 +2205,7 @@ end})
 Tab:AddButton({
     Name = "BlackKing汉化版",
     Callback = function()
-loadstring(game:HttpGet("https://pastebin.com/raw/65TwT8ia"))()
+loadstring(game:HttpGet("https://pastebin.com/raw/65TwT8ja"))()
 end})
 
 Tab:AddButton({
