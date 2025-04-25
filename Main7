@@ -1134,7 +1134,7 @@ loadstring(game:HttpGet("\104\116\116\112\115\58\47\47\112\97\115\116\101\98\105
 Tab:AddButton({
 	Name = "自走A-1000",
 	Callback = function()
-        loadstring(game:HttpGet("https://scriptblox.com/raw/DOORS-Auto-A1000-9285"))()
+        loadstring(game:HttpGet("https://github.com/MrFuZebing/Doors/raw/refs/heads/main/bot"))()
   	end    
 })
 Tab:AddButton({
