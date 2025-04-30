@@ -1,7 +1,7 @@
 -- Made by MrFuZebing
  
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
-	game.StarterGui:SetCore("SendNotification", { Title = "Invalid Place"; Text = "The game detected appears to not be rooms. Please execute this while in rooms!" })
+	game.StarterGui:SetCore("SendNotification", { Title = "Invalid Place"; Text = "请在Rooms里执行!" })
  
 	local Sound = Instance.new("Sound")
 	Sound.Parent = game.SoundService
@@ -12,7 +12,7 @@ if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= 
  
 	return
 elseif workspace:FindFirstChild("PathFindPartsFolder") then
-	game.StarterGui:SetCore("SendNotification", { Title = "Warning"; Text = "If you are having issues and the bot is broken, please contact me! geodude#2619" })
+	game.StarterGui:SetCore("SendNotification", { Title = "Warning"; Text = "如果您有问题，并且bot坏了，请与我联系!" })
  
 	local Sound = Instance.new("Sound")
 	Sound.Parent = game.SoundService
