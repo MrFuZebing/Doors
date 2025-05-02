@@ -1,187 +1,297 @@
 -- Made by MrFuZebing
- 
+
+-- 环境检测
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
-	game.StarterGui:SetCore("SendNotification", { Title = "无效位置"; Text = "请在Rooms里执行!" })
- 
-	local Sound = Instance.new("Sound")
-	Sound.Parent = game.SoundService
-	Sound.SoundId = "rbxassetid://550209561"
-	Sound.Volume = 5
-	Sound.PlayOnRemove = true
-	Sound:Destroy()
- 
-	return
-elseif workspace:FindFirstChild("PathFindPartsFolder") then
-	game.StarterGui:SetCore("SendNotification", { Title = "警告"; Text = "如果您有问题，并且bot坏了，请与我联系!" })
- 
-	local Sound = Instance.new("Sound")
-	Sound.Parent = game.SoundService
-	Sound.SoundId = "rbxassetid://550209561"
-	Sound.Volume = 5
-	Sound.PlayOnRemove = true
-	Sound:Destroy()
- 
-	return
+    game.StarterGui:SetCore("SendNotification", { Title = "无效位置", Text = "请在Rooms里执行!" })
+    
+    local Sound = Instance.new("Sound")
+    Sound.Parent = game.SoundService
+    Sound.SoundId = "rbxassetid://550209561"
+    Sound.Volume = 5
+    Sound.PlayOnRemove = true
+    Sound:Destroy()
+    return
 end
- 
+
+-- 服务声明
 local PathfindingService = game:GetService("PathfindingService")
-local VirtualInputManager = game:GetService('VirtualInputManager')
+local VirtualInputManager = game:GetService('VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = game.Players.LocalPlayer
 local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
- 
-local Cooldown = false
- 
+
+-- 控制变量
+local isRunning = true
+local isPaused = false
+local currentSpeed = 21  -- 动态速度变量
+
+-- GUI创建
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoBotGUI"
 ScreenGui.Parent = game.CoreGui
- 
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Parent = ScreenGui
- 
-TextLabel.Size = UDim2.new(0,350,0,100)
-TextLabel.TextSize = 48
-TextLabel.TextStrokeColor3 = Color3.new(1,1,1)
-TextLabel.TextStrokeTransparency = 0
-TextLabel.BackgroundTransparency = 1
- 
+
+-- 主框架
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 280, 0, 220)
+MainFrame.Position = UDim2.new(0.8, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- 标题
+local Title = Instance.new("TextLabel")
+Title.Text = "AutoBot Control v2.1"
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+-- 状态显示
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Text = "🟢 运行中"
+StatusLabel.Position = UDim2.new(0.1, 0, 0.2, 0)
+StatusLabel.Size = UDim2.new(0.8, 0, 0, 25)
+StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.Parent = MainFrame
+
+-- 速度控制系统
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Text = "速度: 21"
+SpeedLabel.Position = UDim2.new(0.1, 0, 0.35, 0)
+SpeedLabel.Size = UDim2.new(0.8, 0, 0, 20)
+SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedLabel.Font = Enum.Font.GothamMedium
+SpeedLabel.Parent = MainFrame
+
+local SpeedSlider = Instance.new("Frame")
+SpeedSlider.Position = UDim2.new(0.1, 0, 0.45, 0)
+SpeedSlider.Size = UDim2.new(0.6, 0, 0, 10)
+SpeedSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SpeedSlider.Parent = MainFrame
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(0.5, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SpeedSlider
+
+local SliderButton = Instance.new("TextButton")
+SliderButton.Size = UDim2.new(0, 20, 0, 20)
+SliderButton.Position = UDim2.new(0.5, -10, 0, -5)
+SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SliderButton.Text = ""
+SliderButton.Parent = SpeedSlider
+
+local SpeedInput = Instance.new("TextBox")
+SpeedInput.PlaceholderText = "输入速度"
+SpeedInput.Position = UDim2.new(0.75, 0, 0.45, -5)
+SpeedInput.Size = UDim2.new(0.2, 0, 0, 20)
+SpeedInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SpeedInput.TextColor3 = Color3.new(1, 1, 1)
+SpeedInput.Font = Enum.Font.GothamMedium
+SpeedInput.Parent = MainFrame
+
+-- 控制按钮
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Text = "⏸️ 暂停脚本"
+ToggleButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+ToggleButton.Size = UDim2.new(0.35, 0, 0, 35)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 200)
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.Font = Enum.Font.GothamSemibold
+ToggleButton.Parent = MainFrame
+
+local StopButton = Instance.new("TextButton")
+StopButton.Text = "⏹️ 彻底关闭"
+StopButton.Position = UDim2.new(0.55, 0, 0.6, 0)
+StopButton.Size = UDim2.new(0.35, 0, 0, 35)
+StopButton.BackgroundColor3 = Color3.fromRGB(200, 70, 70)
+StopButton.TextColor3 = Color3.new(1, 1, 1)
+StopButton.Font = Enum.Font.GothamSemibold
+StopButton.Parent = MainFrame
+
+-- 按钮动效
+local function HoverEffect(btn, normalColor, hoverColor)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+HoverEffect(ToggleButton, 
+    Color3.fromRGB(70, 70, 200), 
+    Color3.fromRGB(100, 100, 255))
+
+HoverEffect(StopButton, 
+    Color3.fromRGB(200, 70, 70), 
+    Color3.fromRGB(255, 100, 100))
+
+-- 速度控制逻辑
+local function updateSpeed(value)
+    value = math.clamp(value, 1, 50)
+    currentSpeed = value
+    SpeedLabel.Text = "速度: "..tostring(math.floor(value))
+    SliderFill.Size = UDim2.new(value/50, 0, 1, 0)
+    SliderButton.Position = UDim2.new(value/50, -10, 0, -5)
+end
+
+SliderButton.MouseButton1Down:Connect(function()
+    local connection
+    connection = game:GetService("RunService").RenderStepped:Connect(function()
+        local mousePos = UserInputService:GetMouseLocation().X
+        local sliderPos = SpeedSlider.AbsolutePosition.X
+        local sliderWidth = SpeedSlider.AbsoluteSize.X
+        local ratio = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+        updateSpeed(ratio * 50)
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            connection:Disconnect()
+        end
+    end)
+end)
+
+SpeedInput.FocusLost:Connect(function()
+    local num = tonumber(SpeedInput.Text)
+    if num then
+        updateSpeed(num)
+    else
+        SpeedInput.Text = ""
+    end
+end)
+
+-- 按钮功能
+ToggleButton.MouseButton1Click:Connect(function()
+    isPaused = not isPaused
+    StatusLabel.Text = isPaused and "🟠 已暂停" or "🟢 运行中"
+    StatusLabel.TextColor3 = isPaused and Color3.fromRGB(255, 165, 0) or Color3.fromRGB(0, 255, 0)
+    ToggleButton.Text = isPaused and "▶️ 继续脚本" or "⏸️ 暂停脚本"
+end)
+
+StopButton.MouseButton1Click:Connect(function()
+    isRunning = false
+    isPaused = false
+    if workspace:FindFirstChild("PathFindPartsFolder") then
+        workspace.PathFindPartsFolder:Destroy()
+    end
+    LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+    ScreenGui:Destroy()
+    
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "脚本已关闭",
+        Text = "已清除所有路径!"
+    })
+    
+    local Sound = Instance.new("Sound")
+    Sound.SoundId = "rbxassetid://138080526"
+    Sound.Volume = 2
+    Sound.Parent = game.SoundService
+    Sound:Play()
+    Sound.Ended:Wait()
+    Sound:Destroy()
+end)
+
+-- 防闲置
 local GC = getconnections or get_signal_cons
 if GC then
-    for i,v in pairs(GC(LocalPlayer.Idled)) do
-        if v["Disable"] then
-            v["Disable"](v)
-        elseif v["Disconnect"] then
-            v["Disconnect"](v)
-        end
+    for _,v in pairs(GC(LocalPlayer.Idled)) do
+        if v["Disable"] then v["Disable"](v) end
     end
 end
- 
-local Folder = Instance.new("Folder")
-Folder.Parent = workspace
-Folder.Name = "PathFindPartsFolder"
- 
-if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
-    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol" -- Fuck you A90
-end
- 
-function getLocker()
+
+-- 路径文件夹
+local PathFolder = Instance.new("Folder")
+PathFolder.Name = "PathFindPartsFolder"
+PathFolder.Parent = workspace
+
+-- 房间追踪
+LatestRoom:GetPropertyChangedSignal("Value"):Connect(function()
+    if LatestRoom.Value == 1000 then
+        isRunning = false
+        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+        PathFolder:ClearAllChildren()
+        
+        game.StarterGui:SetCore("SendNotification", { 
+            Title = "感谢使用!", 
+            Text = "youtube.com/@ZebingFu-n6d" 
+        })
+    end
+end)
+
+-- 核心功能
+local function getLocker()
     local Closest
- 
-    for i,v in pairs(workspace.CurrentRooms:GetDescendants()) do
-        if v.Name == "Rooms_Locker" then
-            if v:FindFirstChild("Door") and v:FindFirstChild("HiddenPlayer") then
-                if v.HiddenPlayer.Value == nil then
-                    if v.Door.Position.Y > -3 then -- Prevents going to the lower lockers in the room with the bridge 
-                        if Closest == nil then
-                            Closest = v.Door
-                        else
-                            if (LocalPlayer.Character.HumanoidRootPart.Position - v.Door.Position).Magnitude < (Closest.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude then
-                                Closest = v.Door
-                            end
-                        end
-                    end
+    for _,v in pairs(workspace.CurrentRooms:GetDescendants()) do
+        if v.Name == "Rooms_Locker" and v:FindFirstChild("Door") then
+            if v.HiddenPlayer.Value == nil and v.Door.Position.Y > -3 then
+                local dist = (LocalPlayer.Character.HumanoidRootPart.Position - v.Door.Position).Magnitude
+                if not Closest or dist < (Closest.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude then
+                    Closest = v.Door
                 end
             end
         end
     end
     return Closest
 end
- 
-function getPath()
-    local Part
- 
-    local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
-    if Entity and Entity.Main.Position.Y > -4 then
-        Part = getLocker()
+
+local function getPath()
+    if (workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")) and getLocker() then
+        return getLocker()
     else
-        Part = workspace.CurrentRooms[LatestRoom.Value].Door.Door
+        return workspace.CurrentRooms[LatestRoom.Value].Door.Door
     end
-    return Part
 end
- 
-LatestRoom:GetPropertyChangedSignal("Value"):Connect(function()
-    TextLabel.Text = "Room: "..math.clamp(LatestRoom.Value, 1,1000)
- 
-    if LatestRoom.Value ~= 1000 then
-        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
-    else
-        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
- 
-        Folder:ClearAllChildren()
- 
-        local Sound = Instance.new("Sound")
-        Sound.Parent = game.SoundService
-        Sound.SoundId = "rbxassetid://4590662766"
-        Sound.Volume = 3
-        Sound.PlayOnRemove = true
-        Sound:Destroy()
- 
-        game.StarterGui:SetCore("SendNotification", { Title = "youtube:https://m.youtube.com/@ZebingFu-n6d"; Text = "感谢您使用我的脚本！" })
-        return
-    end
-end)
- 
-game:GetService("RunService").RenderStepped:connect(function()
-    LocalPlayer.Character.HumanoidRootPart.CanCollide = false
-    LocalPlayer.Character.Collision.CanCollide = false
-    LocalPlayer.Character.Collision.Size = Vector3.new(8,LocalPlayer.Character.Collision.Size.Y,8)
- 
-    LocalPlayer.Character.Humanoid.WalkSpeed = 21
- 
-    local Path = getPath()
- 
-    local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
-    if Entity then
-        if Path then
-            if Path.Parent.Name == "Rooms_Locker" then
-                if Entity.Main.Position.Y > -4 then
-                    if (LocalPlayer.Character.HumanoidRootPart.Position - Path.Position).Magnitude < 2 then
-                        if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                            fireproximityprompt(Path.Parent.HidePrompt)
+
+-- 主循环
+coroutine.wrap(function()
+    while isRunning do
+        if not isPaused then
+            local Destination = getPath()
+            if Destination then
+                local path = PathfindingService:CreatePath({ 
+                    AgentRadius = 0.5, 
+                    WaypointSpacing = 2 
+                })
+                
+                path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position, Destination.Position)
+                
+                if path.Status == Enum.PathStatus.Success then
+                    PathFolder:ClearAllChildren()
+                    for _, wp in pairs(path:GetWaypoints()) do
+                        local part = Instance.new("Part")
+                        part.Size = Vector3.new(1,1,1)
+                        part.Shape = "Cylinder"
+                        part.Color = Color3.fromRGB(0, 255, 0)
+                        part.Material = "Neon"
+                        part.Transparency = 0.5
+                        part.CanCollide = false
+                        part.Anchored = true
+                        part.CFrame = CFrame.new(wp.Position) * CFrame.Angles(0, 0, math.rad(90))
+                        part.Parent = PathFolder
+                    end
+                    
+                    for _, wp in pairs(path:GetWaypoints()) do
+                        if wp.Action == Enum.PathWaypointAction.Jump then
+                            LocalPlayer.Character.Humanoid.Jump = true
                         end
+                        LocalPlayer.Character.Humanoid:MoveTo(wp.Position)
+                        LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
                     end
                 end
             end
         end
-        if Entity.Main.Position.Y < -4 then
-            if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
-                LocalPlayer.Character:SetAttribute("Hiding", false)
-            end
-        end
-    else
-        if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
-            LocalPlayer.Character:SetAttribute("Hiding", false)
-        end
+        wait(0.5)
     end
+end)()
+
+-- 实时更新
+game:GetService("RunService").RenderStepped:Connect(function()
+    LocalPlayer.Character.Humanoid.WalkSpeed = currentSpeed
+    LocalPlayer.Character.HumanoidRootPart.CanCollide = false
 end)
- 
-while true do
- 
-    local Destination = getPath()
- 
-    local path = PathfindingService:CreatePath({ WaypointSpacing = 1, AgentRadius = 0.1, AgentCanJump = false })
-    path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0,3,0), Destination.Position)
-    local Waypoints = path:GetWaypoints()
- 
-    if path.Status ~= Enum.PathStatus.NoPath then
- 
-        Folder:ClearAllChildren()
- 
-        for _, Waypoint in pairs(Waypoints) do
-            local part = Instance.new("Part")
-            part.Size = Vector3.new(1,1,1)
-            part.Position = Waypoint.Position
-            part.Shape = "Cylinder"
-            part.Rotation = Vector3.new(0,0,90)
-            part.Material = "SmoothPlastic"
-            part.Anchored = true
-            part.CanCollide = false
-            part.Parent = Folder
-        end
- 
-        for _, Waypoint in pairs(Waypoints) do
-            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                LocalPlayer.Character.Humanoid:MoveTo(Waypoint.Position)
-                LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
-            end
-        end
-    end
-end
