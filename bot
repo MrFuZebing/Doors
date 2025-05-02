@@ -1,7 +1,7 @@
 -- Made by MrFuZebing
  
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
-	game.StarterGui:SetCore("SendNotification", { Title = "Invalid Place"; Text = "请在Rooms里执行!" })
+	game.StarterGui:SetCore("SendNotification", { Title = "无效位置"; Text = "请在Rooms里执行!" })
  
 	local Sound = Instance.new("Sound")
 	Sound.Parent = game.SoundService
@@ -12,7 +12,7 @@ if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= 
  
 	return
 elseif workspace:FindFirstChild("PathFindPartsFolder") then
-	game.StarterGui:SetCore("SendNotification", { Title = "Warning"; Text = "如果您有问题，并且bot坏了，请与我联系!" })
+	game.StarterGui:SetCore("SendNotification", { Title = "警告"; Text = "如果您有问题，并且bot坏了，请与我联系!" })
  
 	local Sound = Instance.new("Sound")
 	Sound.Parent = game.SoundService
@@ -114,7 +114,7 @@ LatestRoom:GetPropertyChangedSignal("Value"):Connect(function()
         Sound.PlayOnRemove = true
         Sound:Destroy()
  
-        game.StarterGui:SetCore("SendNotification", { Title = "youtube:https://m.youtube.com/@ZebingFu-n6d"; Text = "Thank you for using my script!" })
+        game.StarterGui:SetCore("SendNotification", { Title = "youtube:https://m.youtube.com/@ZebingFu-n6d"; Text = "感谢您使用我的脚本！" })
         return
     end
 end)
