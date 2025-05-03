@@ -1,4 +1,5 @@
--- Made by MrFuZebing
+
+-- Made by MrFuZebing 
 
 -- 环境检测
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
@@ -15,11 +16,16 @@ end
 
 -- 服务声明
 local PathfindingService = game:GetService("PathfindingService")
-local VirtualInputManager = game:GetService('VirtualInputManager")
+local VirtualInputManager = game:GetService('VirtualInputManager')
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = game.Players.LocalPlayer
 local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
+
+-- 禁用A90模块
+if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
+    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol"
+end
 
 -- 控制变量
 local isRunning = true
