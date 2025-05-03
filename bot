@@ -35,7 +35,7 @@ local isA120Disabled = false
 
 -- GUI创建
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoBotGUI"
+ScreenGui.Name = "RoomsAutoBotGUI"
 ScreenGui.Parent = game.CoreGui
 
 -- 主框架（高度调整为260以容纳新按钮）
