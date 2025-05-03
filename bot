@@ -1,5 +1,5 @@
 
--- Made by MrFuZebing | 由枫叶冰修改增强
+-- Made by MrFuZebing 
 
 -- 环境检测
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
@@ -56,7 +56,7 @@ TitleFrame.BackgroundTransparency = 1
 TitleFrame.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
-Title.Text = "AutoBot Control v2.3"
+Title.Text = "RoomsAutoBot"
 Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.1, 0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
