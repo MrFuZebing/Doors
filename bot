@@ -59,7 +59,7 @@ TitleFrame.BackgroundTransparency = 1
 TitleFrame.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
-Title.Text = "AutoBot Control v2.3"
+Title.Text = "AutoRoomsBot"
 Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.1, 0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
