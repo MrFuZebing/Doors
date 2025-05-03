@@ -1,4 +1,4 @@
--- Made by MrFuZebing | 由枫叶冰修改增强
+-- Made by MrFuZebing 
 
 -- 环境检测
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
