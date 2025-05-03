@@ -56,7 +56,7 @@ Title.Parent = MainFrame
 
 -- 状态显示
 local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Text = "🟢 运行中"
+StatusLabel.Text = "🟢 运行中(已自动屏蔽A90)"
 StatusLabel.Position = UDim2.new(0.1, 0, 0.2, 0)
 StatusLabel.Size = UDim2.new(0.8, 0, 0, 25)
 StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
