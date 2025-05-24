@@ -43,15 +43,27 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoBotGUI"
 ScreenGui.Parent = game.CoreGui
 
--- 主框架（添加拖动支持）
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 280, 0, 260)
-MainFrame.Position = UDim2.new(0.8, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
-MainFrame.Active = true  -- 允许接收输入
+MainFrame.Active = true
 MainFrame.Parent = ScreenGui
+-- 动态居中函数
+local function centerFrame()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    MainFrame.Position = UDim2.new(
+        0.5, -MainFrame.AbsoluteSize.X/2,
+        0.5, -MainFrame.AbsoluteSize.Y/2
+    )
+end
+
+-- 初始居中
+centerFrame()
+
+-- 窗口大小变化时重新居中（如最小化/恢复）
+MainFrame:GetPropertyChangedSignal("Size"):Connect(centerFrame)
 
 -- 标题栏（拖动区域）
 local TitleFrame = Instance.new("Frame")
