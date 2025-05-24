@@ -1,5 +1,5 @@
-
 -- Made by MrFuZebing 
+-- Modified with Draggable Window (Original A90 handling preserved)
 
 -- 环境检测
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
@@ -25,7 +25,7 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = game.Players.LocalPlayer
 local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
 
--- 禁用A90模块
+-- 禁用A90模块（保持原始重命名方式）
 if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
     LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol"
 end
@@ -33,8 +33,8 @@ end
 -- 控制变量
 local isRunning = true
 local isPaused = false
-local isMinimized = false  -- 最小化状态
-local currentSpeed = 21    -- 动态速度变量
+local isMinimized = false
+local currentSpeed = 21
 local isA60Disabled = false
 local isA120Disabled = false
 
@@ -43,23 +43,24 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoBotGUI"
 ScreenGui.Parent = game.CoreGui
 
--- 主框架（高度可动态调整）
+-- 主框架（添加拖动支持）
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 280, 0, 260)
 MainFrame.Position = UDim2.new(0.8, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true  -- 防止内容溢出
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true  -- 允许接收输入
 MainFrame.Parent = ScreenGui
 
--- 标题栏（包含最小化按钮）
+-- 标题栏（拖动区域）
 local TitleFrame = Instance.new("Frame")
 TitleFrame.Size = UDim2.new(1, 0, 0, 35)
 TitleFrame.BackgroundTransparency = 1
 TitleFrame.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
-Title.Text = "AutoRoomsBot"
+Title.Text = "AutoBot Control v2.3"
 Title.Size = UDim2.new(0.8, 0, 1, 0)
 Title.Position = UDim2.new(0.1, 0, 0, 0)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -78,7 +79,42 @@ MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.TextSize = 20
 MinimizeButton.Parent = TitleFrame
 
--- 状态显示
+-- 拖动功能实现
+local dragging, dragInput, dragStart, startPos
+
+TitleFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- 状态显示（以下保持原始代码不变）--
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Text = "🟢 运行中(已自动屏蔽A90)"
 StatusLabel.Position = UDim2.new(0.1, 0, 0.2, 0)
@@ -87,7 +123,6 @@ StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
 StatusLabel.Font = Enum.Font.GothamMedium
 StatusLabel.Parent = MainFrame
 
--- 速度控制系统
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Text = "速度: 21"
 SpeedLabel.Position = UDim2.new(0.1, 0, 0.35, 0)
@@ -124,7 +159,6 @@ SpeedInput.TextColor3 = Color3.new(1, 1, 1)
 SpeedInput.Font = Enum.Font.GothamMedium
 SpeedInput.Parent = MainFrame
 
--- 控制按钮
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Text = "⏸️ 暂停脚本"
 ToggleButton.Position = UDim2.new(0.1, 0, 0.6, 0)
@@ -143,7 +177,6 @@ StopButton.TextColor3 = Color3.new(1, 1, 1)
 StopButton.Font = Enum.Font.GothamSemibold
 StopButton.Parent = MainFrame
 
--- 屏蔽按钮
 local A60Button = Instance.new("TextButton")
 A60Button.Text = "🟥 未屏蔽A60"
 A60Button.Position = UDim2.new(0.1, 0, 0.75, 0)
