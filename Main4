@@ -2197,13 +2197,13 @@ loadstring(game:HttpGet("https://github.com/DocYogurt/Main/raw/main/Scripts/DF2R
 end})
 
 Tab:AddButton({
-    Name = "MS HUB",
+    Name = "MS HUB已无法使用",
     Callback = function()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/PixelMeta/mshub-v2/main/main.lua"))()
 end})
 
 Tab:AddButton({
-    Name = "MS V2",
+    Name = "MS V2已无法使用",
     Callback = function()
 loadstring(game:HttpGet("https://github.com/notpoiu/mspaint/releases/latest/download/Script.luau"))()
 end})
@@ -2211,7 +2211,7 @@ end})
 Tab:AddButton({
     Name = "BlackKing汉化版",
     Callback = function()
-loadstring(game:HttpGet("https://pastebin.com/raw/65TwT8ja"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MrFuZebing/Script/refs/heads/main/Games/DoorsBlackking"))()
 end})
 
 Tab:AddButton({
