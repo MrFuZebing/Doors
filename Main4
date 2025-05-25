@@ -2199,7 +2199,13 @@ end})
 Tab:AddButton({
     Name = "MS HUB",
     Callback = function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MSDOORS/main/MSDOORS.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PixelMeta/mshub-v2/main/main.lua"))()
+end})
+
+Tab:AddButton({
+    Name = "MS V2",
+    Callback = function()
+loadstring(game:HttpGet("https://github.com/notpoiu/mspaint/releases/latest/download/Script.luau"))()
 end})
 
 Tab:AddButton({
