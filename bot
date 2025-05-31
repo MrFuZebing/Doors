@@ -1,119 +1,75 @@
--- Made by MrFuZebing (完整版)
-
--- 地图限制检查
+-- Made by MrFuZebing
+ 
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
-    game.StarterGui:SetCore("SendNotification", { 
-        Title = "无效位置", 
-        Text = "请在Rooms地图中执行此脚本!" 
-    })
-    
-    local Sound = Instance.new("Sound")
-    Sound.Parent = game.SoundService
-    Sound.SoundId = "rbxassetid://550209561"
-    Sound.Volume = 5
-    Sound.PlayOnRemove = true
-    Sound:Destroy()
-    
-    return
+	game.StarterGui:SetCore("SendNotification", { Title = "Invalid Place"; Text = "The game detected appears to not be rooms. Please execute this while in rooms!" })
+ 
+	local Sound = Instance.new("Sound")
+	Sound.Parent = game.SoundService
+	Sound.SoundId = "rbxassetid://550209561"
+	Sound.Volume = 5
+	Sound.PlayOnRemove = true
+	Sound:Destroy()
+ 
+	return
+elseif workspace:FindFirstChild("PathFindPartsFolder") then
+	game.StarterGui:SetCore("SendNotification", { Title = "Warning"; Text = "If you are having issues and the bot is broken, please contact me! geodude#2619" })
+ 
+	local Sound = Instance.new("Sound")
+	Sound.Parent = game.SoundService
+	Sound.SoundId = "rbxassetid://550209561"
+	Sound.Volume = 5
+	Sound.PlayOnRemove = true
+	Sound:Destroy()
+ 
+	return
 end
-
+ 
 local PathfindingService = game:GetService("PathfindingService")
 local VirtualInputManager = game:GetService('VirtualInputManager')
 local LocalPlayer = game.Players.LocalPlayer
 local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
-
+ 
 local Cooldown = false
-local isPaused = false
-local isRunning = true
-
--- 创建GUI
-local repo = "https://raw.githubusercontent.com/mstudio45/LinoriaLib/main/"
-local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
-local Options = getgenv().Linoria.Options
-local Toggles = getgenv().Linoria.Toggles
-
-local Window = Library:CreateWindow({
-    Title = "AutoRooms",
-    Center = true,
-    AutoShow = true,
-    Resizable = true,
-    ShowCustomCursor = true,
-    TabPadding = 4,
-    MenuFadeTime = 0
-})
-
-local Tabs = {
-    Main = Window:AddTab("主要的"),
-    ["UI Settings"] = Window:AddTab("UI设置")
-}
-
--- 添加控制按钮
-local ControlGroup = Tabs.Main:AddLeftGroupbox("控制")
-ControlGroup:AddToggle("PauseToggle", {
-    Text = "暂停",
-    Default = false,
-    Callback = function(value)
-        isPaused = value
-        if value then
-            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
-        else
-            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
-        end
-    end
-})
-
-ControlGroup:AddButton("继续", function()
-    isPaused = false
-    Toggles.PauseToggle:SetValue(false)
-    LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
-end)
-
-ControlGroup:AddButton("停止", function()
-    isRunning = false
-    LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
-    if Folder then Folder:ClearAllChildren() end
-    game.StarterGui:SetCore("SendNotification", { 
-        Title = "脚本已停止", 
-        Text = "AutoRooms导航已手动停止"
-    })
-end)
-
--- 状态显示
-local StatusGroup = Tabs.Main:AddRightGroupbox("状态")
-local StatusLabel = StatusGroup:AddLabel("运行中...")
-
--- 创建路径可视化文件夹
-local Folder = Instance.new("Folder")
-Folder.Parent = workspace
-Folder.Name = "PathFindPartsFolder"
-
--- 禁用AFK检测
+ 
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+ 
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Parent = ScreenGui
+ 
+TextLabel.Size = UDim2.new(0,350,0,100)
+TextLabel.TextSize = 48
+TextLabel.TextStrokeColor3 = Color3.new(1,1,1)
+TextLabel.TextStrokeTransparency = 0
+TextLabel.BackgroundTransparency = 1
+ 
 local GC = getconnections or get_signal_cons
 if GC then
     for i,v in pairs(GC(LocalPlayer.Idled)) do
         if v["Disable"] then
             v["Disable"](v)
-        elseif v["Disock"] then
+        elseif v["Disconnect"] then
             v["Disconnect"](v)
         end
     end
 end
-
--- 处理A90实体
+ 
+local Folder = Instance.new("Folder")
+Folder.Parent = workspace
+Folder.Name = "PathFindPartsFolder"
+ 
 if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
-    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol" 
+    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol" -- Fuck you A90
 end
-
+ 
 function getLocker()
     local Closest
-    
+ 
     for i,v in pairs(workspace.CurrentRooms:GetDescendants()) do
         if v.Name == "Rooms_Locker" then
             if v:FindFirstChild("Door") and v:FindFirstChild("HiddenPlayer") then
                 if v.HiddenPlayer.Value == nil then
-                    if v.Door.Position.Y > -3 then
+                    if v.Door.Position.Y > -3 then -- Prevents going to the lower lockers in the room with the bridge 
                         if Closest == nil then
                             Closest = v.Door
                         else
@@ -128,10 +84,10 @@ function getLocker()
     end
     return Closest
 end
-
+ 
 function getPath()
     local Part
-    
+ 
     local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
     if Entity and Entity.Main.Position.Y > -4 then
         Part = getLocker()
@@ -140,155 +96,92 @@ function getPath()
     end
     return Part
 end
-
+ 
 LatestRoom:GetPropertyChangedSignal("Value"):Connect(function()
-    StatusLabel:SetText("当前房间: "..math.clamp(LatestRoom.Value, 1,1000))
-    
-    if LatestRoom.Value == 1000 then
-        isRunning = false
+    TextLabel.Text = "Room: "..math.clamp(LatestRoom.Value, 1,1000)
+ 
+    if LatestRoom.Value ~= 1000 then
+        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
+    else
         LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+ 
         Folder:ClearAllChildren()
-        
+ 
         local Sound = Instance.new("Sound")
         Sound.Parent = game.SoundService
         Sound.SoundId = "rbxassetid://4590662766"
         Sound.Volume = 3
         Sound.PlayOnRemove = true
         Sound:Destroy()
-        
-        game.StarterGui:SetCore("SendNotification", { 
-            Title = "已完成!", 
-            Text = "已到达终点房间! 感谢使用AutoRooms" 
-        })
+ 
+        game.StarterGui:SetCore("SendNotification", { Title = "youtube:https://m.youtube.com/@ZebingFu-n6d"; Text = "Thank you for using my script!" })
+        return
     end
 end)
-
-game:GetService("RunService").RenderStepped:Connect(function()
-    if not isRunning or isPaused then return end
-    
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CanCollide = false
-        if LocalPlayer.Character:FindFirstChild("Collision") then
-            LocalPlayer.Character.Collision.CanCollide = false
-            LocalPlayer.Character.Collision.Size = Vector3.new(8, LocalPlayer.Character.Collision.Size.Y, 8)
-        end
-        
-        LocalPlayer.Character.Humanoid.WalkSpeed = 21
-        
-        local Path = getPath()
-        
-        local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
-        if Entity then
-            if Path then
-                if Path.Parent.Name == "Rooms_Locker" then
-                    if Entity.Main.Position.Y > -4 then
-                        if (LocalPlayer.Character.HumanoidRootPart.Position - Path.Position).Magnitude < 2 then
-                            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                                fireproximityprompt(Path.Parent.HidePrompt)
-                            end
+ 
+game:GetService("RunService").RenderStepped:connect(function()
+    LocalPlayer.Character.HumanoidRootPart.CanCollide = false
+    LocalPlayer.Character.Collision.CanCollide = false
+    LocalPlayer.Character.Collision.Size = Vector3.new(8,LocalPlayer.Character.Collision.Size.Y,8)
+ 
+    LocalPlayer.Character.Humanoid.WalkSpeed = 21
+ 
+    local Path = getPath()
+ 
+    local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
+    if Entity then
+        if Path then
+            if Path.Parent.Name == "Rooms_Locker" then
+                if Entity.Main.Position.Y > -4 then
+                    if (LocalPlayer.Character.HumanoidRootPart.Position - Path.Position).Magnitude < 2 then
+                        if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
+                            fireproximityprompt(Path.Parent.HidePrompt)
                         end
                     end
                 end
             end
-            if Entity.Main.Position.Y < -4 then
-                if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
-                    LocalPlayer.Character:SetAttribute("Hiding", false)
-                end
-            end
-        else
+        end
+        if Entity.Main.Position.Y < -4 then
             if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
                 LocalPlayer.Character:SetAttribute("Hiding", false)
             end
         end
+    else
+        if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
+            LocalPlayer.Character:SetAttribute("Hiding", false)
+        end
     end
 end)
-
--- 添加UI设置
-local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("菜单")
-MenuGroup:AddToggle("KeybindMenuOpen", { 
-    Default = false, 
-    Text = "显示按键绑定",
-    Callback = function(value) 
-        Library.KeybindFrame.Visible = value 
-    end
-})
-
-MenuGroup:AddDivider()
-MenuGroup:AddLabel("菜单绑定"):AddKeyPicker("MenuKeybind", { 
-    Default = "RightShift", 
-    NoUI = true, 
-    Text = "菜单键绑定" 
-})
-
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
-ThemeManager:SetFolder("AutoRooms")
-SaveManager:SetFolder("AutoRooms/settings")
-SaveManager:BuildConfigSection(Tabs["UI Settings"])
-ThemeManager:ApplyToTab(Tabs["UI Settings"])
-SaveManager:LoadAutoloadConfig()
-
-Library.ToggleKeybind = Options.MenuKeybind
-
--- 主路径计算循环
-coroutine.wrap(function()
-    while isRunning do
-        if not isPaused then
-            local Destination = getPath()
-            
-            if Destination and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local path = PathfindingService:CreatePath({ 
-                    WaypointSpacing = 1, 
-                    AgentRadius = 0.1, 
-                    AgentCanJump = false 
-                })
-                
-                local success, err = pcall(function()
-                    path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0,3,0), Destination.Position)
-                end)
-                
-                if success and path.Status ~= Enum.PathStatus.NoPath then
-                    Folder:ClearAllChildren()
-                    
-                    local Waypoints = path:GetWaypoints()
-                    
-                    for _, Waypoint in pairs(Waypoints) do
-                        local part = Instance.new("Part")
-                        part.Size = Vector3.new(1,1,1)
-                        part.Position = Waypoint.Position
-                        part.Shape = "Cylinder"
-                        part.Rotation = Vector3.new(0,0,90)
-                        part.Material = "SmoothPlastic"
-                        part.Anchored = true
-                        part.CanCollide = false
-                        part.Transparency = 0.7
-                        part.Color = Color3.fromRGB(0, 170, 255)
-                        part.Parent = Folder
-                    end
-                    
-                    for _, Waypoint in pairs(Waypoints) do
-                        if not isRunning or isPaused then break end
-                        
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                                LocalPlayer.Character.Humanoid:MoveTo(Waypoint.Position)
-                                LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
-                            end
-                        end
-                    end
-                end
+ 
+while true do
+ 
+    local Destination = getPath()
+ 
+    local path = PathfindingService:CreatePath({ WaypointSpacing = 1, AgentRadius = 0.1, AgentCanJump = false })
+    path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0,3,0), Destination.Position)
+    local Waypoints = path:GetWaypoints()
+ 
+    if path.Status ~= Enum.PathStatus.NoPath then
+ 
+        Folder:ClearAllChildren()
+ 
+        for _, Waypoint in pairs(Waypoints) do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(1,1,1)
+            part.Position = Waypoint.Position
+            part.Shape = "Cylinder"
+            part.Rotation = Vector3.new(0,0,90)
+            part.Material = "SmoothPlastic"
+            part.Anchored = true
+            part.CanCollide = false
+            part.Parent = Folder
+        end
+ 
+        for _, Waypoint in pairs(Waypoints) do
+            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
+                LocalPlayer.Character.Humanoid:MoveTo(Waypoint.Position)
+                LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
             end
         end
-        wait(0.1)
     end
-end)()
-
--- 脚本卸载处理
-Library:OnUnload(function()
-    isRunning = false
-    LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
-    if Folder then Folder:ClearAllChildren() end
-    print("AutoRooms已卸载")
-end)
+end
