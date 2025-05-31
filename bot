@@ -1,75 +1,649 @@
--- Made by MrFuZebing
- 
+-- Made by MrFuZebing (完整功能版)
+
+-- 地图限制检查
 if game.PlaceId ~= 6839171747 or game.ReplicatedStorage.GameData.Floor.Value ~= "Rooms" then
-	game.StarterGui:SetCore("SendNotification", { Title = "Invalid Place"; Text = "The game detected appears to not be rooms. Please execute this while in rooms!" })
- 
-	local Sound = Instance.new("Sound")
-	Sound.Parent = game.SoundService
-	Sound.SoundId = "rbxassetid://550209561"
-	Sound.Volume = 5
-	Sound.PlayOnRemove = true
-	Sound:Destroy()
- 
-	return
-elseif workspace:FindFirstChild("PathFindPartsFolder") then
-	game.StarterGui:SetCore("SendNotification", { Title = "Warning"; Text = "If you are having issues and the bot is broken, please contact me! geodude#2619" })
- 
-	local Sound = Instance.new("Sound")
-	Sound.Parent = game.SoundService
-	Sound.SoundId = "rbxassetid://550209561"
-	Sound.Volume = 5
-	Sound.PlayOnRemove = true
-	Sound:Destroy()
- 
-	return
+    game.StarterGui:SetCore("SendNotification", { 
+        Title = "无效位置", 
+        Text = "请在Rooms地图中执行此脚本!" 
+    })
+    
+    local Sound = Instance.new("Sound")
+    Sound.Parent = game.SoundService
+    Sound.SoundId = "rbxassetid://550209561"
+    Sound.Volume = 5
+    Sound.PlayOnRemove = true
+    Sound:Destroy()
+    
+    return
 end
- 
+
 local PathfindingService = game:GetService("PathfindingService")
-local VirtualInputManager = game:GetService('VirtualInputManager')
-local LocalPlayer = game.Players.LocalPlayer
-local LatestRoom = game.ReplicatedStorage.GameData.LatestRoom
- 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local LatestRoom = ReplicatedStorage.GameData.LatestRoom
+
 local Cooldown = false
- 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.CoreGui
- 
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Parent = ScreenGui
- 
-TextLabel.Size = UDim2.new(0,350,0,100)
-TextLabel.TextSize = 48
-TextLabel.TextStrokeColor3 = Color3.new(1,1,1)
-TextLabel.TextStrokeTransparency = 0
-TextLabel.BackgroundTransparency = 1
- 
-local GC = getconnections or get_signal_cons
-if GC then
-    for i,v in pairs(GC(LocalPlayer.Idled)) do
-        if v["Disable"] then
-            v["Disable"](v)
-        elseif v["Disconnect"] then
-            v["Disconnect"](v)
+local isPaused = false
+local isRunning = true
+local uiHidden = false
+local uiLocked = false
+
+-- 功能开关
+local autoPickupEnabled = true
+local espEnabled = true
+local espItems = {}
+local highlights = {}
+local billboards = {}
+
+-- 透视颜色设置
+local espColors = {
+    Door = Color3.fromRGB(0, 255, 255),
+    Key = Color3.fromRGB(0, 255, 0),
+    Gold = Color3.fromRGB(255, 255, 0),
+    Locker = Color3.fromRGB(255, 150, 0),
+    Entity = Color3.fromRGB(255, 0, 0),
+    Player = Color3.fromRGB(200, 200, 255)
+}
+
+-- 创建自定义UI库
+local function CreateUI()
+    -- 主屏幕GUI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "AutoRoomsGUI"
+    ScreenGui.DisplayOrder = 10
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = game.CoreGui
+    
+    -- 主窗口
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainWindow"
+    MainFrame.Size = UDim2.new(0, 500, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.Parent = ScreenGui
+    
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Size = UDim2.new(1, 0, 0, 30)
+    TopBar.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    TopBar.BorderSizePixel = 0
+    TopBar.Parent = MainFrame
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "Title"
+    TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = "AutoRooms"
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 16
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = TopBar
+    
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 30, 1, 0)
+    CloseButton.Position = UDim2.new(1, -30, 0, 0)
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.TextSize = 16
+    CloseButton.Parent = TopBar
+    
+    -- 标签栏
+    local TabBar = Instance.new("Frame")
+    TabBar.Name = "TabBar"
+    TabBar.Size = UDim2.new(1, 0, 0, 40)
+    TabBar.Position = UDim2.new(0, 0, 0, 30)
+    TabBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    TabBar.BorderSizePixel = 0
+    TabBar.Parent = MainFrame
+    
+    local MainTab = Instance.new("TextButton")
+    MainTab.Name = "MainTab"
+    MainTab.Size = UDim2.new(0.5, 0, 1, 0)
+    MainTab.Position = UDim2.new(0, 0, 0, 0)
+    MainTab.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    MainTab.BorderSizePixel = 0
+    MainTab.Text = "主要的"
+    MainTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainTab.Font = Enum.Font.Gotham
+    MainTab.TextSize = 14
+    MainTab.Parent = TabBar
+    
+    local SettingsTab = Instance.new("TextButton")
+    SettingsTab.Name = "SettingsTab"
+    SettingsTab.Size = UDim2.new(0.5, 0, 1, 0)
+    SettingsTab.Position = UDim2.new(0.5, 0, 0, 0)
+    SettingsTab.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    SettingsTab.BorderSizePixel = 0
+    SettingsTab.Text = "UI设置"
+    SettingsTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    SettingsTab.Font = Enum.Font.Gotham
+    SettingsTab.TextSize = 14
+    SettingsTab.Parent = TabBar
+    
+    -- 内容区域
+    local ContentFrame = Instance.new("Frame")
+    ContentFrame.Name = "ContentFrame"
+    ContentFrame.Size = UDim2.new(1, 0, 1, -70)
+    ContentFrame.Position = UDim2.new(0, 0, 0, 70)
+    ContentFrame.BackgroundTransparency = 1
+    ContentFrame.Parent = MainFrame
+    
+    -- 主标签页内容
+    local MainContent = Instance.new("Frame")
+    MainContent.Name = "MainContent"
+    MainContent.Size = UDim2.new(1, 0, 1, 0)
+    MainContent.BackgroundTransparency = 1
+    MainContent.Visible = true
+    MainContent.Parent = ContentFrame
+    
+    -- 控制组
+    local ControlGroup = Instance.new("Frame")
+    ControlGroup.Name = "ControlGroup"
+    ControlGroup.Size = UDim2.new(0.45, -10, 0.5, -10)
+    ControlGroup.Position = UDim2.new(0, 10, 0, 10)
+    ControlGroup.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    ControlGroup.BorderSizePixel = 0
+    ControlGroup.Parent = MainContent
+    
+    local ControlTitle = Instance.new("TextLabel")
+    ControlTitle.Name = "Title"
+    ControlTitle.Size = UDim2.new(1, 0, 0, 30)
+    ControlTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    ControlTitle.BorderSizePixel = 0
+    ControlTitle.Text = "控制"
+    ControlTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ControlTitle.Font = Enum.Font.GothamBold
+    ControlTitle.TextSize = 14
+    ControlTitle.Parent = ControlGroup
+    
+    local PauseToggle = Instance.new("TextButton")
+    PauseToggle.Name = "PauseToggle"
+    PauseToggle.Size = UDim2.new(0.9, 0, 0, 30)
+    PauseToggle.Position = UDim2.new(0.05, 0, 0, 40)
+    PauseToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    PauseToggle.BorderSizePixel = 0
+    PauseToggle.Text = "暂停"
+    PauseToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PauseToggle.Font = Enum.Font.Gotham
+    PauseToggle.TextSize = 14
+    PauseToggle.Parent = ControlGroup
+    
+    local ResumeButton = Instance.new("TextButton")
+    ResumeButton.Name = "ResumeButton"
+    ResumeButton.Size = UDim2.new(0.9, 0, 0, 30)
+    ResumeButton.Position = UDim2.new(0.05, 0, 0, 80)
+    ResumeButton.BackgroundColor3 = Color3.fromRGB(70, 120, 70)
+    ResumeButton.BorderSizePixel = 0
+    ResumeButton.Text = "继续"
+    ResumeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ResumeButton.Font = Enum.Font.Gotham
+    ResumeButton.TextSize = 14
+    ResumeButton.Parent = ControlGroup
+    
+    local StopButton = Instance.new("TextButton")
+    StopButton.Name = "StopButton"
+    StopButton.Size = UDim2.new(0.9, 0, 0, 30)
+    StopButton.Position = UDim2.new(0.05, 0, 0, 120)
+    StopButton.BackgroundColor3 = Color3.fromRGB(120, 70, 70)
+    StopButton.BorderSizePixel = 0
+    StopButton.Text = "停止"
+    StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StopButton.Font = Enum.Font.Gotham
+    StopButton.TextSize = 14
+    StopButton.Parent = ControlGroup
+    
+    -- 功能组
+    local FeatureGroup = Instance.new("Frame")
+    FeatureGroup.Name = "FeatureGroup"
+    FeatureGroup.Size = UDim2.new(0.45, -10, 0.5, -10)
+    FeatureGroup.Position = UDim2.new(0.55, 0, 0, 10)
+    FeatureGroup.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    FeatureGroup.BorderSizePixel = 0
+    FeatureGroup.Parent = MainContent
+    
+    local FeatureTitle = Instance.new("TextLabel")
+    FeatureTitle.Name = "Title"
+    FeatureTitle.Size = UDim2.new(1, 0, 0, 30)
+    FeatureTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    FeatureTitle.BorderSizePixel = 0
+    FeatureTitle.Text = "功能"
+    FeatureTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FeatureTitle.Font = Enum.Font.GothamBold
+    FeatureTitle.TextSize = 14
+    FeatureTitle.Parent = FeatureGroup
+    
+    local AutoPickupToggle = Instance.new("TextButton")
+    AutoPickupToggle.Name = "AutoPickupToggle"
+    AutoPickupToggle.Size = UDim2.new(0.9, 0, 0, 30)
+    AutoPickupToggle.Position = UDim2.new(0.05, 0, 0, 40)
+    AutoPickupToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 120)
+    AutoPickupToggle.BorderSizePixel = 0
+    AutoPickupToggle.Text = "自动拾取: 开启"
+    AutoPickupToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoPickupToggle.Font = Enum.Font.Gotham
+    AutoPickupToggle.TextSize = 14
+    AutoPickupToggle.Parent = FeatureGroup
+    
+    local EspToggle = Instance.new("TextButton")
+    EspToggle.Name = "EspToggle"
+    EspToggle.Size = UDim2.new(0.9, 0, 0, 30)
+    EspToggle.Position = UDim2.new(0.05, 0, 0, 80)
+    EspToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 120)
+    EspToggle.BorderSizePixel = 0
+    EspToggle.Text = "透视功能: 开启"
+    EspToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    EspToggle.Font = Enum.Font.Gotham
+    EspToggle.TextSize = 14
+    EspToggle.Parent = FeatureGroup
+    
+    -- 状态组
+    local StatusGroup = Instance.new("Frame")
+    StatusGroup.Name = "StatusGroup"
+    StatusGroup.Size = UDim2.new(0.9, 0, 0, 30)
+    StatusGroup.Position = UDim2.new(0.05, 0, 0, 160)
+    StatusGroup.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    StatusGroup.BorderSizePixel = 0
+    StatusGroup.Parent = MainContent
+    
+    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.Size = UDim2.new(1, 0, 1, 0)
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Text = "运行中... 房间: 0"
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.TextSize = 16
+    StatusLabel.Parent = StatusGroup
+    
+    -- UI设置内容
+    local SettingsContent = Instance.new("Frame")
+    SettingsContent.Name = "SettingsContent"
+    SettingsContent.Size = UDim2.new(1, 0, 1, 0)
+    SettingsContent.BackgroundTransparency = 1
+    SettingsContent.Visible = false
+    SettingsContent.Parent = ContentFrame
+    
+    local MenuGroup = Instance.new("Frame")
+    MenuGroup.Name = "MenuGroup"
+    MenuGroup.Size = UDim2.new(0.9, 0, 0.9, 0)
+    MenuGroup.Position = UDim2.new(0.05, 0, 0.05, 0)
+    MenuGroup.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    MenuGroup.BorderSizePixel = 0
+    MenuGroup.Parent = SettingsContent
+    
+    local MenuTitle = Instance.new("TextLabel")
+    MenuTitle.Name = "Title"
+    MenuTitle.Size = UDim2.new(1, 0, 0, 30)
+    MenuTitle.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    MenuTitle.BorderSizePixel = 0
+    MenuTitle.Text = "菜单设置"
+    MenuTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MenuTitle.Font = Enum.Font.GothamBold
+    MenuTitle.TextSize = 14
+    MenuTitle.Parent = MenuGroup
+    
+    local HideButton = Instance.new("TextButton")
+    HideButton.Name = "HideButton"
+    HideButton.Size = UDim2.new(0.9, 0, 0, 30)
+    HideButton.Position = UDim2.new(0.05, 0, 0, 40)
+    HideButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    HideButton.BorderSizePixel = 0
+    HideButton.Text = "隐藏UI"
+    HideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HideButton.Font = Enum.Font.Gotham
+    HideButton.TextSize = 14
+    HideButton.Parent = MenuGroup
+    
+    local LockButton = Instance.new("TextButton")
+    LockButton.Name = "LockButton"
+    LockButton.Size = UDim2.new(0.9, 0, 0, 30)
+    LockButton.Position = UDim2.new(0.05, 0, 0, 80)
+    LockButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    LockButton.BorderSizePixel = 0
+    LockButton.Text = "锁定UI位置"
+    LockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LockButton.Font = Enum.Font.Gotham
+    LockButton.TextSize = 14
+    LockButton.Parent = MenuGroup
+    
+    -- 返回顶部按钮
+    local TopButton = Instance.new("TextButton")
+    TopButton.Name = "TopButton"
+    TopButton.Size = UDim2.new(0, 40, 0, 40)
+    TopButton.Position = UDim2.new(1, -50, 1, -50)
+    TopButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    TopButton.BorderSizePixel = 0
+    TopButton.Text = "▲"
+    TopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TopButton.Font = Enum.Font.GothamBold
+    TopButton.TextSize = 20
+    TopButton.Visible = false
+    TopButton.Parent = ScreenGui
+    
+    -- UI交互功能
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    -- 窗口拖动功能
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not uiLocked then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
-    end
+    end)
+    
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    -- 标签切换
+    MainTab.MouseButton1Click:Connect(function()
+        MainContent.Visible = true
+        SettingsContent.Visible = false
+        MainTab.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        SettingsTab.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        MainTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SettingsTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end)
+    
+    SettingsTab.MouseButton1Click:Connect(function()
+        MainContent.Visible = false
+        SettingsContent.Visible = true
+        SettingsTab.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+        MainTab.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        SettingsTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        MainTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end)
+    
+    -- 控制按钮功能
+    PauseToggle.MouseButton1Click:Connect(function()
+        isPaused = not isPaused
+        PauseToggle.Text = isPaused and "已暂停" or "暂停"
+        if isPaused then
+            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+        else
+            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
+        end
+    end)
+    
+    ResumeButton.MouseButton1Click:Connect(function()
+        isPaused = false
+        PauseToggle.Text = "暂停"
+        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
+    end)
+    
+    StopButton.MouseButton1Click:Connect(function()
+        isRunning = false
+        isPaused = true
+        PauseToggle.Text = "已停止"
+        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+        if Folder then Folder:ClearAllChildren() end
+        ClearESP() -- 清除所有透视效果
+        game.StarterGui:SetCore("SendNotification", { 
+            Title = "脚本已停止", 
+            Text = "AutoRooms导航已手动停止"
+        })
+    end)
+    
+    -- 功能按钮
+    AutoPickupToggle.MouseButton1Click:Connect(function()
+        autoPickupEnabled = not autoPickupEnabled
+        AutoPickupToggle.Text = "自动拾取: " .. (autoPickupEnabled and "开启" or "关闭")
+    end)
+    
+    EspToggle.MouseButton1Click:Connect(function()
+        espEnabled = not espEnabled
+        EspToggle.Text = "透视功能: " .. (espEnabled and "开启" or "关闭")
+        
+        if espEnabled then
+            UpdateESP() -- 重新生成透视效果
+        else
+            ClearESP() -- 清除所有透视效果
+        end
+    end)
+    
+    -- UI设置按钮
+    HideButton.MouseButton1Click:Connect(function()
+        uiHidden = not uiHidden
+        MainFrame.Visible = not uiHidden
+        HideButton.Text = uiHidden and "显示UI" or "隐藏UI"
+        TopButton.Visible = uiHidden
+    end)
+    
+    LockButton.MouseButton1Click:Connect(function()
+        uiLocked = not uiLocked
+        LockButton.Text = uiLocked and "解锁UI位置" or "锁定UI位置"
+    end)
+    
+    -- 返回顶部按钮
+    TopButton.MouseButton1Click:Connect(function()
+        uiHidden = false
+        MainFrame.Visible = true
+        HideButton.Text = "隐藏UI"
+        TopButton.Visible = false
+    end)
+    
+    -- 关闭按钮
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        isRunning = false
+        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+        if Folder then Folder:ClearAllChildren() end
+        ClearESP() -- 清除所有透视效果
+    end)
+    
+    return {
+        ScreenGui = ScreenGui,
+        StatusLabel = StatusLabel
+    }
 end
- 
+
+-- 初始化UI
+local UI = CreateUI()
+local StatusLabel = UI.StatusLabel
+
+-- 创建路径可视化文件夹
 local Folder = Instance.new("Folder")
 Folder.Parent = workspace
 Folder.Name = "PathFindPartsFolder"
- 
-if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
-    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol" -- Fuck you A90
+
+-- 禁用AFK检测
+local function disableAFK()
+    local success, result = pcall(function()
+        for _, conn in ipairs(getconnections(LocalPlayer.Idled)) do
+            if conn.Disable then
+                conn:Disable()
+            elseif conn.Disconnect then
+                conn:Disconnect()
+            end
+        end
+    end)
+    
+    if not success then
+        warn("无法禁用AFK检测: " .. tostring(result))
+    end
 end
- 
+
+disableAFK()
+
+-- 处理A90实体
+if LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("A90") then
+    LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.A90.Name = "lol" 
+end
+
+-- 透视功能函数
+function CreateESP(object, objectType, text)
+    if not object or not object:IsDescendantOf(workspace) then return end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESPHighlight"
+    highlight.Adornee = object
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.FillColor = espColors[objectType] or espColors.Entity
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = espColors[objectType] or espColors.Entity
+    highlight.OutlineTransparency = 0
+    highlight.Parent = object
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESPBillboard"
+    billboard.Adornee = object.PrimaryPart or object
+    billboard.AlwaysOnTop = true
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    
+    local label = Instance.new("TextLabel")
+    label.Name = "ESPLabel"
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text or objectType
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextStrokeColor3 = Color3.new(0, 0, 0)
+    label.TextStrokeTransparency = 0.5
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 18
+    label.Parent = billboard
+    
+    billboard.Parent = object
+    
+    table.insert(highlights, highlight)
+    table.insert(billboards, billboard)
+    
+    return highlight, billboard
+end
+
+function ClearESP()
+    for _, highlight in ipairs(highlights) do
+        if highlight and highlight:IsDescendantOf(workspace) then
+            highlight:Destroy()
+        end
+    end
+    
+    for _, billboard in ipairs(billboards) do
+        if billboard and billboard:IsDescendantOf(workspace) then
+            billboard:Destroy()
+        end
+    end
+    
+    highlights = {}
+    billboards = {}
+end
+
+function UpdateESP()
+    if not espEnabled then return end
+    
+    ClearESP()
+    
+    -- 透视门
+    for _, room in ipairs(workspace.CurrentRooms:GetChildren()) do
+        if room:FindFirstChild("Door") then
+            CreateESP(room.Door, "Door", "门 "..(room.Name + 1))
+        end
+    end
+    
+    -- 透视物品
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            if obj.Name == "KeyObtain" then
+                CreateESP(obj, "Key", "钥匙")
+            elseif obj.Name == "GoldPile" then
+                CreateESP(obj, "Gold", "金币")
+            elseif obj.Name == "Rooms_Locker" then
+                CreateESP(obj, "Locker", "柜子")
+            end
+        end
+    end
+    
+    -- 透视玩家
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            CreateESP(player.Character, "Player", player.Name)
+        end
+    end
+    
+    -- 透视实体
+    local entities = {"A60", "A120", "Screech", "Halt", "Figure"}
+    for _, entityName in ipairs(entities) do
+        local entity = workspace:FindFirstChild(entityName)
+        if entity then
+            CreateESP(entity, "Entity", entityName)
+        end
+    end
+end
+
+-- 自动拾取功能
+function AutoPickupItems()
+    if not autoPickupEnabled or not LocalPlayer.Character then return end
+    
+    local characterPos = LocalPlayer.Character.HumanoidRootPart.Position
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            local pickupAttr = obj:GetAttribute("Pickup")
+            local isKey = obj.Name == "KeyObtain"
+            local isGold = obj.Name == "GoldPile"
+            
+            if pickupAttr or isKey or isGold then
+                local objPos = obj:GetPivot().Position
+                local distance = (characterPos - objPos).Magnitude
+                
+                if distance < 15 then
+                    -- 自动拾取钥匙
+                    if isKey and obj:FindFirstChild("Prompt") then
+                        fireproximityprompt(obj.Prompt)
+                    end
+                    
+                    -- 自动拾取金币
+                    if isGold and obj:FindFirstChild("Prompt") then
+                        fireproximityprompt(obj.Prompt)
+                    end
+                    
+                    -- 拾取其他物品
+                    if pickupAttr and obj:FindFirstChild("Prompt") then
+                        fireproximityprompt(obj.Prompt)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 获取最近可用柜子
 function getLocker()
     local Closest
- 
+    
     for i,v in pairs(workspace.CurrentRooms:GetDescendants()) do
         if v.Name == "Rooms_Locker" then
             if v:FindFirstChild("Door") and v:FindFirstChild("HiddenPlayer") then
                 if v.HiddenPlayer.Value == nil then
-                    if v.Door.Position.Y > -3 then -- Prevents going to the lower lockers in the room with the bridge 
+                    if v.Door.Position.Y > -3 then
                         if Closest == nil then
                             Closest = v.Door
                         else
@@ -84,10 +658,11 @@ function getLocker()
     end
     return Closest
 end
- 
+
+-- 获取目标路径点
 function getPath()
     local Part
- 
+    
     local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
     if Entity and Entity.Main.Position.Y > -4 then
         Part = getLocker()
@@ -96,92 +671,177 @@ function getPath()
     end
     return Part
 end
- 
+
+-- 房间变化监听
 LatestRoom:GetPropertyChangedSignal("Value"):Connect(function()
-    TextLabel.Text = "Room: "..math.clamp(LatestRoom.Value, 1,1000)
- 
-    if LatestRoom.Value ~= 1000 then
-        LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
-    else
+    StatusLabel.Text = "运行中... 房间: "..math.clamp(LatestRoom.Value, 1,1000)
+    
+    if LatestRoom.Value == 1000 then
+        isRunning = false
         LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
- 
         Folder:ClearAllChildren()
- 
+        ClearESP() -- 清除透视效果
+        
         local Sound = Instance.new("Sound")
         Sound.Parent = game.SoundService
         Sound.SoundId = "rbxassetid://4590662766"
         Sound.Volume = 3
         Sound.PlayOnRemove = true
         Sound:Destroy()
- 
-        game.StarterGui:SetCore("SendNotification", { Title = "youtube:https://m.youtube.com/@ZebingFu-n6d"; Text = "Thank you for using my script!" })
-        return
+        
+        game.StarterGui:SetCore("SendNotification", { 
+            Title = "已完成!", 
+            Text = "已到达终点房间! 感谢使用AutoRooms" 
+        })
     end
 end)
- 
-game:GetService("RunService").RenderStepped:connect(function()
-    LocalPlayer.Character.HumanoidRootPart.CanCollide = false
-    LocalPlayer.Character.Collision.CanCollide = false
-    LocalPlayer.Character.Collision.Size = Vector3.new(8,LocalPlayer.Character.Collision.Size.Y,8)
- 
-    LocalPlayer.Character.Humanoid.WalkSpeed = 21
- 
-    local Path = getPath()
- 
-    local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
-    if Entity then
-        if Path then
-            if Path.Parent.Name == "Rooms_Locker" then
-                if Entity.Main.Position.Y > -4 then
-                    if (LocalPlayer.Character.HumanoidRootPart.Position - Path.Position).Magnitude < 2 then
-                        if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                            fireproximityprompt(Path.Parent.HidePrompt)
+
+-- 每帧更新
+RunService.RenderStepped:Connect(function()
+    if not isRunning or isPaused then return end
+    
+    -- 自动拾取物品
+    AutoPickupItems()
+    
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CanCollide = false
+        if LocalPlayer.Character:FindFirstChild("Collision") then
+            LocalPlayer.Character.Collision.CanCollide = false
+            LocalPlayer.Character.Collision.Size = Vector3.new(8, LocalPlayer.Character.Collision.Size.Y, 8)
+        end
+        
+        LocalPlayer.Character.Humanoid.WalkSpeed = 21
+        
+        local Path = getPath()
+        
+        local Entity = workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120")
+        if Entity then
+            if Path then
+                if Path.Parent.Name == "Rooms_Locker" then
+                    if Entity.Main.Position.Y > -4 then
+                        if (LocalPlayer.Character.HumanoidRootPart.Position - Path.Position).Magnitude < 2 then
+                            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
+                                fireproximityprompt(Path.Parent.HidePrompt)
+                            end
+                        end
+                    end
+                end
+            end
+            if Entity.Main.Position.Y < -4 then
+                if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
+                    LocalPlayer.Character:SetAttribute("Hiding", false)
+                end
+            end
+        else
+            if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
+                LocalPlayer.Character:SetAttribute("Hiding", false)
+            end
+        end
+    end
+end)
+
+-- 主路径计算循环
+coroutine.wrap(function()
+    while isRunning do
+        if not isPaused then
+            local Destination = getPath()
+            
+            if Destination and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local path = PathfindingService:CreatePath({ 
+                    WaypointSpacing = 1, 
+                    AgentRadius = 0.1, 
+                    AgentCanJump = false 
+                })
+                
+                local success, err = pcall(function()
+                    path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0,3,0), Destination.Position)
+                end)
+                
+                if success and path.Status ~= Enum.PathStatus.NoPath then
+                    Folder:ClearAllChildren()
+                    
+                    local Waypoints = path:GetWaypoints()
+                    
+                    for _, Waypoint in pairs(Waypoints) do
+                        local part = Instance.new("Part")
+                        part.Size = Vector3.new(1,1,1)
+                        part.Position = Waypoint.Position
+                        part.Shape = "Cylinder"
+                        part.Rotation = Vector3.new(0,0,90)
+                        part.Material = "SmoothPlastic"
+                        part.Anchored = true
+                        part.CanCollide = false
+                        part.Transparency = 0.7
+                        part.Color = Color3.fromRGB(0, 170, 255)
+                        part.Parent = Folder
+                    end
+                    
+                    for _, Waypoint in pairs(Waypoints) do
+                        if not isRunning or isPaused then break end
+                        
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
+                                LocalPlayer.Character.Humanoid:MoveTo(Waypoint.Position)
+                                LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
+                            end
                         end
                     end
                 end
             end
         end
-        if Entity.Main.Position.Y < -4 then
-            if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
-                LocalPlayer.Character:SetAttribute("Hiding", false)
-            end
+        wait(0.1)
+    end
+end)()
+
+-- 初始化透视效果
+UpdateESP()
+
+-- 监听新房间生成
+workspace.CurrentRooms.ChildAdded:Connect(function(room)
+    wait(1) -- 等待房间加载
+    if espEnabled then
+        UpdateESP() -- 更新透视
+    end
+end)
+
+-- 快捷键设置
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    
+    -- 切换UI显示/隐藏 (F1)
+    if input.KeyCode == Enum.KeyCode.F1 then
+        uiHidden = not uiHidden
+        UI.ScreenGui.MainWindow.Visible = not uiHidden
+        UI.ScreenGui.TopButton.Visible = uiHidden
+        if UI.ScreenGui.MenuGroup then
+            UI.ScreenGui.MenuGroup.HideButton.Text = uiHidden and "显示UI" or "隐藏UI"
         end
-    else
-        if LocalPlayer.Character.HumanoidRootPart.Anchored == true then
-            LocalPlayer.Character:SetAttribute("Hiding", false)
+    end
+    
+    -- 暂停/继续 (空格键)
+    if input.KeyCode == Enum.KeyCode.Space then
+        isPaused = not isPaused
+        if UI.ScreenGui.ControlGroup then
+            UI.ScreenGui.ControlGroup.PauseToggle.Text = isPaused and "已暂停" or "暂停"
+        end
+        if isPaused then
+            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.KeyboardMouse
+        else
+            LocalPlayer.DevComputerMovementMode = Enum.DevComputerMovementMode.Scriptable
+        end
+    end
+    
+    -- 切换透视 (F2)
+    if input.KeyCode == Enum.KeyCode.F2 then
+        espEnabled = not espEnabled
+        if UI.ScreenGui.FeatureGroup then
+            UI.ScreenGui.FeatureGroup.EspToggle.Text = "透视功能: " .. (espEnabled and "开启" or "关闭")
+        end
+        
+        if espEnabled then
+            UpdateESP() -- 重新生成透视效果
+        else
+            ClearESP() -- 清除所有透视效果
         end
     end
 end)
- 
-while true do
- 
-    local Destination = getPath()
- 
-    local path = PathfindingService:CreatePath({ WaypointSpacing = 1, AgentRadius = 0.1, AgentCanJump = false })
-    path:ComputeAsync(LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0,3,0), Destination.Position)
-    local Waypoints = path:GetWaypoints()
- 
-    if path.Status ~= Enum.PathStatus.NoPath then
- 
-        Folder:ClearAllChildren()
- 
-        for _, Waypoint in pairs(Waypoints) do
-            local part = Instance.new("Part")
-            part.Size = Vector3.new(1,1,1)
-            part.Position = Waypoint.Position
-            part.Shape = "Cylinder"
-            part.Rotation = Vector3.new(0,0,90)
-            part.Material = "SmoothPlastic"
-            part.Anchored = true
-            part.CanCollide = false
-            part.Parent = Folder
-        end
- 
-        for _, Waypoint in pairs(Waypoints) do
-            if LocalPlayer.Character.HumanoidRootPart.Anchored == false then
-                LocalPlayer.Character.Humanoid:MoveTo(Waypoint.Position)
-                LocalPlayer.Character.Humanoid.MoveToFinished:Wait()
-            end
-        end
-    end
-end
